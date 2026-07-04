@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/g/:viewId", "destination": "/api/view-meta?viewId=:viewId" },
+    { "source": "/((?!api/|assets/).*)", "destination": "/index.html" }
+  ]
+}

@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-paper font-body text-ink antialiased;
+  overscroll-behavior: none;
+}
+
+/* Visible focus for keyboard users without boxing every pointer click */
+:focus-visible {
+  outline: 2px solid #a9690f;
+  outline-offset: 2px;
+}
