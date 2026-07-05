@@ -136,7 +136,8 @@ function UploadVideoTile({
     if (!active) ref.current?.pause();
   }, [active]);
   return (
-    <div className="relative h-full w-full bg-ink">
+    // Same letterbox treatment as image tiles: contained media, black bars.
+    <div className="relative h-full w-full bg-black">
       <video
         ref={ref}
         src={tile.url}

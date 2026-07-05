@@ -35,10 +35,14 @@ async function jsonFetchOrNull<T>(url: string): Promise<T | null> {
   return res.json();
 }
 
+// HTML detection also checks the extension: some iOS flows mistag .html
+// attachments as text/plain, and the 2 MB HTML cap must still apply to them.
+const isHtmlFile = (f: File) => f.type === "text/html" || /\.html?$/i.test(f.name);
+
 const UPLOAD_LIMITS: { test: (f: File) => boolean; max: number; label: string }[] = [
   { test: (f) => f.type.startsWith("video/"), max: 100 * 1024 * 1024, label: "Video up to 100 MB" },
   { test: (f) => f.type === "application/pdf", max: 25 * 1024 * 1024, label: "PDFs up to 25 MB" },
-  { test: (f) => f.type === "text/html", max: 2 * 1024 * 1024, label: "HTML up to 2 MB" },
+  { test: isHtmlFile, max: 2 * 1024 * 1024, label: "HTML up to 2 MB" },
   { test: () => true, max: 10 * 1024 * 1024, label: "Images and GIFs up to 10 MB" },
 ];
 
@@ -76,7 +80,10 @@ export const store: GridStore = {
     const sb = createClient(url, anonKey);
     const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
     const key = `${gridId}/${newMediaKey()}.${ext}`;
-    const { error } = await sb.storage.from("media").upload(key, file, { contentType: file.type });
+    // Serve mistagged .html uploads as text/html so embed iframes execute
+    // them instead of showing source text.
+    const contentType = isHtmlFile(file) ? "text/html" : file.type || "application/octet-stream";
+    const { error } = await sb.storage.from("media").upload(key, file, { contentType });
     if (error) throw new Error(`Upload failed: ${error.message}`);
     return sb.storage.from("media").getPublicUrl(key).data.publicUrl;
   },
