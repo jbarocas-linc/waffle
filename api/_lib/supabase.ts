@@ -1,9 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 
+/** Thrown for missing/misconfigured server env vars — safe to surface to the client (no secrets in the message). */
+export class SupabaseConfigError extends Error {}
+
 export function sbAdmin() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Supabase env vars are not configured");
+  if (!url || !key) {
+    throw new SupabaseConfigError(
+      `Supabase server env vars are not configured (SUPABASE_URL: ${url ? "set" : "MISSING"}, ` +
+        `SUPABASE_SERVICE_ROLE_KEY: ${key ? "set" : "MISSING"}). Set both in Vercel and redeploy.`,
+    );
+  }
   return createClient(url, key, { auth: { persistSession: false } });
 }
 

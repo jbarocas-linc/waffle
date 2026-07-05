@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { customAlphabet } from "nanoid";
-import { fromDb, patchToDb, sbAdmin } from "./_lib/supabase";
+import { fromDb, patchToDb, sbAdmin, SupabaseConfigError } from "./_lib/supabase";
 
 const nano = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz-");
 
@@ -78,7 +78,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader("Allow", "GET, POST, PATCH");
     return res.status(405).json({ error: "method not allowed" });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "server error" });
+    // Structured log so Postgrest error codes/details/hints actually show up
+    // in Vercel's function logs instead of collapsing to "[object Object]".
+    console.error(`[api/grids] ${req.method} failed:`, {
+      message: err instanceof Error ? err.message : String(err),
+      code: (err as { code?: string })?.code,
+      details: (err as { details?: string })?.details,
+      hint: (err as { hint?: string })?.hint,
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    // Config errors (missing/misconfigured env vars) are safe to surface
+    // directly — they name which var is missing, never a secret value — so
+    // this is diagnosable from the browser Network tab without log access.
+    // Anything else (DB errors, etc.) stays generic to the client.
+    const message = err instanceof SupabaseConfigError ? err.message : "server error";
+    return res.status(500).json({ error: message });
   }
 }
