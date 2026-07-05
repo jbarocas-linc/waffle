@@ -13,7 +13,7 @@ import { DraftGridForm, proposalStartCell } from "../editor/DraftGrid";
 import { BulkUploadButton } from "../editor/BulkUpload";
 import { ArrangeGrid } from "../editor/ArrangeGrid";
 import { GridViewer } from "../viewer/GridViewer";
-import { WaffleWordmark } from "../components/WaffleLogo";
+import { WaffleMark, WaffleWordmark } from "../components/WaffleLogo";
 
 export default function EditorPage() {
   const { editToken } = useParams<{ editToken: string }>();
@@ -158,8 +158,9 @@ export default function EditorPage() {
     <div className="min-h-full">
       <header className="sticky top-0 z-40 border-b border-ink/10 bg-paper/90 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
-          <Link to="/" className="shrink-0 text-base hover:opacity-80">
-            <WaffleWordmark />
+          <Link to="/" className="flex shrink-0 items-center gap-2 hover:opacity-80">
+            <WaffleMark size={28} />
+            <WaffleWordmark className="text-base" />
           </Link>
           <input
             value={grid.title}

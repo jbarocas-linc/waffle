@@ -5,6 +5,7 @@ import type { DraftProposal, GridSize, Tile } from "../types";
 import { store } from "../lib/store";
 import { curatedBg } from "../lib/palette";
 import { DraftGridForm, proposalStartCell } from "../editor/DraftGrid";
+import { WaffleMark } from "../components/WaffleLogo";
 
 export default function NewGrid() {
   const navigate = useNavigate();
@@ -58,8 +59,8 @@ export default function NewGrid() {
 
   return (
     <div className="mx-auto min-h-full max-w-xl px-6 py-12">
-      <Link to="/" className="text-sm text-ink/50 hover:text-ink">
-        ← Waffle
+      <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-ink/50 hover:text-ink">
+        <WaffleMark size={20} />← Waffle
       </Link>
       <h1 className="mt-6 font-display text-4xl font-semibold">New grid</h1>
 

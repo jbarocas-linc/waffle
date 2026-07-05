@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import { WaffleLogo, WaffleWordmark } from "../components/WaffleLogo";
+import { WaffleLogo } from "../components/WaffleLogo";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -24,9 +24,8 @@ export default function Landing() {
   return (
     <div className="flex min-h-full flex-col items-center justify-center px-6 py-16">
       <main className="w-full max-w-md text-center">
-        <WaffleLogo size={180} className="mx-auto mb-4 drop-shadow-sm" />
-        <h1 className="text-6xl tracking-tight">
-          <WaffleWordmark />
+        <h1 className="flex justify-center">
+          <WaffleLogo width={220} className="drop-shadow-sm" />
         </h1>
         <p className="mt-4 text-lg leading-relaxed text-ink/70">
           Bite-sized learning grids you swipe through — in any direction, at your own pace.

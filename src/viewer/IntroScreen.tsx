@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import type { PublicGrid } from "../types";
-import { WaffleLogo } from "../components/WaffleLogo";
+import { WaffleMark } from "../components/WaffleLogo";
 
 export function IntroScreen({ grid, onStart }: { grid: PublicGrid; onStart: () => void }) {
   return (
@@ -17,7 +17,7 @@ export function IntroScreen({ grid, onStart }: { grid: PublicGrid; onStart: () =
     >
       {grid.coverUrl && <div className="absolute inset-0 bg-black/60" />}
       <div className="relative z-[2] flex flex-col items-center">
-        <WaffleLogo size={56} className="mb-4" />
+        <WaffleMark size={56} className="mb-4" />
         <p className="mb-4 text-xs font-bold uppercase tracking-[0.25em] text-white/50">
           A swipeable grid
         </p>

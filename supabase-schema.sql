@@ -1,5 +1,8 @@
 -- Waffle — Supabase schema
--- Run in the Supabase SQL editor once per project.
+-- Run in the Supabase SQL editor once per project. Safe to re-run — every
+-- statement is idempotent, so running this again against an already-set-up
+-- project (e.g. to fix a bucket that was created with the wrong limits) just
+-- brings it back in line with this file.
 
 create table if not exists grids (
   id          uuid primary key default gen_random_uuid(),
@@ -27,19 +30,35 @@ create index if not exists grids_edit_token_idx on grids (edit_token);
 -- edit_token stays off the view path.
 alter table grids enable row level security;
 
--- Storage: create a bucket named "media" (public). Client uploads use the
--- anon key, so allow anon INSERT into that bucket; reads are public.
--- Size/MIME limits are enforced client-side (and can't be fully expressed in
--- storage policies) — set the bucket's global file size limit to 100 MB in
--- the dashboard as a backstop.
-insert into storage.buckets (id, name, public)
-values ('media', 'media', true)
-on conflict (id) do nothing;
+-- ---------------------------------------------------------------------------
+-- Storage: a public "media" bucket for images, GIFs, video, PDFs, and
+-- uploaded HTML embeds. There are no user accounts in this app, so writes are
+-- authenticated by possession of the Supabase anon key (which the browser
+-- sends automatically) rather than a signed-in session — that's the
+-- "authenticated write" here, as opposed to a bucket open to fully anonymous
+-- requests with no key at all.
+--
+-- file_size_limit is in bytes; 104857600 = 100 MB, matching the video cap in
+-- src/lib/store.ts. This is a per-bucket limit — Supabase also enforces a
+-- project-wide upload cap (Settings → Storage → Upload file size limit,
+-- commonly 50 MB by default) that overrides this if it's set lower. Raise
+-- that in the dashboard too if it's below 100 MB.
+-- ---------------------------------------------------------------------------
 
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('media', 'media', true, 104857600)
+on conflict (id) do update
+  set public = true,
+      file_size_limit = 104857600;
+
+drop policy if exists "media public read" on storage.objects;
 create policy "media public read"
   on storage.objects for select
+  to public
   using (bucket_id = 'media');
 
+drop policy if exists "media anon upload" on storage.objects;
 create policy "media anon upload"
   on storage.objects for insert
+  to anon, authenticated
   with check (bucket_id = 'media');

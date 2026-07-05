@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import type { GridRecord } from "../types";
 import { appOrigin } from "../lib/format";
 import { CopyButton } from "../components/CopyButton";
+import { WaffleMark } from "../components/WaffleLogo";
 
 export function SharePanel({ grid, onClose }: { grid: GridRecord; onClose: () => void }) {
   const viewUrl = `${appOrigin()}/g/${grid.viewId}`;
@@ -15,7 +16,10 @@ export function SharePanel({ grid, onClose }: { grid: GridRecord; onClose: () =>
       <button aria-label="Close share panel" className="absolute inset-0" onClick={onClose} />
       <div className="relative max-h-[88dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-2xl md:rounded-3xl">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-2xl font-semibold">Share</h2>
+          <div className="flex items-center gap-2">
+            <WaffleMark size={28} />
+            <h2 className="font-display text-2xl font-semibold">Share</h2>
+          </div>
           <button
             onClick={onClose}
             aria-label="Close"
