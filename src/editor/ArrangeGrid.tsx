@@ -67,7 +67,7 @@ export function ArrangeGrid({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-lg rounded-3xl bg-paper p-6 shadow-2xl">
+      <div className="max-h-[88dvh] w-full max-w-lg overflow-y-auto rounded-3xl bg-paper p-6 shadow-2xl">
         <h2 className="font-display text-2xl font-semibold">Arrange your tiles</h2>
         <p className="mt-1 text-sm text-ink/60">Drag any tile onto another spot to swap them.</p>
         <div
