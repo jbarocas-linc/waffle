@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { anthropic, extractText, MODEL, stripFences } from "./_lib/ai";
-import { rateLimited } from "./_lib/ratelimit";
+import { anthropic, extractText, MODEL, stripFences } from "./_lib/ai.js";
+import { rateLimited } from "./_lib/ratelimit.js";
 
 /**
  * "Help with text" — draft copy from a rough note, or tighten existing copy.

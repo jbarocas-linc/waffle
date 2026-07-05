@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { sbAdmin } from "./_lib/supabase";
+import { sbAdmin } from "./_lib/supabase.js";
 
 /**
  * Serves /g/:viewId with correct OG meta tags injected into the SPA shell so

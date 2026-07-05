@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { anthropic, extractText, MODEL, stripFences } from "./_lib/ai";
-import { rateLimited } from "./_lib/ratelimit";
+import { anthropic, extractText, MODEL, stripFences } from "./_lib/ai.js";
+import { rateLimited } from "./_lib/ratelimit.js";
 
 /**
  * "Draft my grid" — returns a proposal the creator reviews before accepting:

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { customAlphabet } from "nanoid";
-import { fromDb, patchToDb, sbAdmin, SupabaseConfigError } from "./_lib/supabase";
+import { fromDb, patchToDb, sbAdmin, SupabaseConfigError } from "./_lib/supabase.js";
 
 const nano = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz-");
 

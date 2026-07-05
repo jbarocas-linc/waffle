@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { rateLimited } from "./_lib/ratelimit";
+import { rateLimited } from "./_lib/ratelimit.js";
 
 /** Fetch a page's title/description/OG image for link tiles (save-time only). */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
