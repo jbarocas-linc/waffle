@@ -480,7 +480,7 @@ function TileForm({
           {draft.source === "upload" ? (
             <div className="mt-3">
               <UploadField
-                accept=".html,text/html"
+                accept=".html,text/html,text/plain"
                 gridId={gridId}
                 label={draft.src ? "Replace HTML file" : "Upload an HTML file"}
                 onUploaded={(src) => setDraft({ ...draft, src, html: undefined })}
