@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Download, ExternalLink, FileText, Play } from "lucide-react";
+import { Download, ExternalLink, FileText, Play, Volume2, VolumeX } from "lucide-react";
 import type { Tile } from "../../types";
 import { bgStyle, humanBytes, parseVideoUrl, textOn } from "../../lib/format";
 import { DEFAULT_OVERLAY_STYLE, textStyleCss, textWrapperCss } from "../../lib/textStyle";
@@ -132,9 +132,19 @@ function UploadVideoTile({
   active: boolean;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(true);
+
+  // Uploaded clips are always ≤10s (trimmed/compressed at upload time), so
+  // they play like a GIF: loop, muted by default, tap to unmute. autoPlay
+  // only fires on first mount, so swiping back to an already-mounted tile
+  // needs an explicit resume here.
   useEffect(() => {
-    if (!active) ref.current?.pause();
+    const v = ref.current;
+    if (!v) return;
+    if (active) v.play().catch(() => {});
+    else v.pause();
   }, [active]);
+
   return (
     // Same letterbox treatment as image tiles: contained media, black bars.
     <div className="relative h-full w-full bg-black">
@@ -143,9 +153,20 @@ function UploadVideoTile({
         src={tile.url}
         className="h-full w-full object-contain"
         playsInline
-        controls
+        autoPlay
+        loop
+        muted={muted}
         preload="metadata"
+        onClick={() => setMuted((m) => !m)}
       />
+      <button
+        type="button"
+        onClick={() => setMuted((m) => !m)}
+        aria-label={muted ? "Unmute video" : "Mute video"}
+        className="absolute bottom-4 right-4 z-[6] flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm"
+      >
+        {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+      </button>
       <CaptionScrim text={tile.caption} />
     </div>
   );

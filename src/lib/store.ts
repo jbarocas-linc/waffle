@@ -1,21 +1,32 @@
 import type { CreateGridInput, GridPatch, GridRecord, PublicGrid } from "../types";
 import { newMediaKey } from "./ids";
 import { demoGrid } from "../data/demoGrid";
+import { compressImage } from "./imageCompression";
+import { publicStorageUrl, uploadToSupabaseStorage } from "./uploadTransport";
 
 export interface GridStore {
   getByViewId(viewId: string): Promise<PublicGrid | null>;
   getByEditToken(editToken: string): Promise<GridRecord | null>;
   create(input: CreateGridInput): Promise<GridRecord>;
   update(editToken: string, patch: GridPatch): Promise<void>;
-  uploadMedia(gridId: string, file: File): Promise<string>;
+  /** Compresses images automatically; uploads the file as-is otherwise. */
+  uploadMedia(gridId: string, file: File, onProgress?: (pct: number) => void): Promise<string>;
+  /** For pre-processed payloads (e.g. a trimmed video clip) — skips compression. */
+  uploadProcessedClip(
+    gridId: string,
+    originalFile: File,
+    clip: Blob,
+    onProgress?: (pct: number) => void,
+  ): Promise<string>;
 }
 
 // ---------------------------------------------------------------------------
 // Grids talk to /api/grids (Supabase behind a thin server layer, so edit
 // tokens never leak on the view path). Media uploads go straight to Supabase
-// Storage from the browser using the anon key — there is no local fallback,
-// so misconfigured Supabase env vars surface as a real error, not a silent
-// downgrade to a 4 MB localStorage limit.
+// Storage from the browser via XHR (for real progress events) using the anon
+// key — there is no local fallback and no server hop for file bytes, so
+// misconfigured Supabase env vars surface as a real error, not a silent
+// downgrade, and large uploads never touch Vercel's ~4.5MB function body cap.
 // ---------------------------------------------------------------------------
 
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
@@ -58,6 +69,22 @@ function requireSupabaseEnv(): { url: string; anonKey: string } {
   return { url, anonKey };
 }
 
+async function uploadBlob(
+  gridId: string,
+  originalFile: File,
+  payload: Blob,
+  onProgress?: (pct: number) => void,
+): Promise<string> {
+  const { url, anonKey } = requireSupabaseEnv();
+  const ext = originalFile.name.split(".").pop()?.toLowerCase() || "bin";
+  const key = `${gridId}/${newMediaKey()}.${ext}`;
+  const contentType = isHtmlFile(originalFile)
+    ? "text/html"
+    : payload.type || originalFile.type || "application/octet-stream";
+  await uploadToSupabaseStorage(url, anonKey, "media", key, payload, contentType, onProgress);
+  return publicStorageUrl(url, "media", key);
+}
+
 export const store: GridStore = {
   async getByViewId(viewId) {
     if (viewId === demoGrid.viewId) return demoGrid;
@@ -72,19 +99,17 @@ export const store: GridStore = {
   async update(editToken, patch) {
     await jsonFetch("/api/grids", { method: "PATCH", body: JSON.stringify({ editToken, patch }) });
   },
-  async uploadMedia(gridId, file) {
+  async uploadMedia(gridId, file, onProgress) {
+    let payload: Blob = file;
+    if (file.type.startsWith("image/") && file.type !== "image/gif") {
+      payload = await compressImage(file);
+    }
     const rule = UPLOAD_LIMITS.find((r) => r.test(file))!;
-    if (file.size > rule.max) throw new Error(`Too large — ${rule.label.toLowerCase()}.`);
-    const { url, anonKey } = requireSupabaseEnv();
-    const { createClient } = await import("@supabase/supabase-js");
-    const sb = createClient(url, anonKey);
-    const ext = file.name.split(".").pop()?.toLowerCase() || "bin";
-    const key = `${gridId}/${newMediaKey()}.${ext}`;
-    // Serve mistagged .html uploads as text/html so embed iframes execute
-    // them instead of showing source text.
-    const contentType = isHtmlFile(file) ? "text/html" : file.type || "application/octet-stream";
-    const { error } = await sb.storage.from("media").upload(key, file, { contentType });
-    if (error) throw new Error(`Upload failed: ${error.message}`);
-    return sb.storage.from("media").getPublicUrl(key).data.publicUrl;
+    if (payload.size > rule.max) throw new Error(`Too large — ${rule.label.toLowerCase()}.`);
+    return uploadBlob(gridId, file, payload, onProgress);
+  },
+  async uploadProcessedClip(gridId, originalFile, clip, onProgress) {
+    if (clip.size > 100 * 1024 * 1024) throw new Error("Too large — video up to 100 MB.");
+    return uploadBlob(gridId, originalFile, clip, onProgress);
   },
 };

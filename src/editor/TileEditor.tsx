@@ -14,6 +14,7 @@ import type { Tile, TileType } from "../types";
 import { parseVideoUrl } from "../lib/format";
 import { TILE_COLORS } from "../lib/palette";
 import { DEFAULT_OVERLAY_STYLE, defaultBodyStyle } from "../lib/textStyle";
+import { MAX_VIDEO_SECONDS } from "../lib/video";
 import { BackgroundPicker } from "./BackgroundPicker";
 import { UploadField } from "./UploadField";
 import { AssistText } from "./AssistText";
@@ -321,10 +322,15 @@ function TileForm({
           </p>
           <UploadField
             accept="video/*"
+            kind="video"
             gridId={gridId}
             label={draft.source === "upload" && draft.url ? "Replace video clip" : "Upload a video clip"}
             onUploaded={(url) => setDraft({ ...draft, url, source: "upload" })}
           />
+          <p className="mt-2 text-xs text-ink/50">
+            Clips over {MAX_VIDEO_SECONDS} seconds open a trim tool — pick any {MAX_VIDEO_SECONDS}-second
+            window to use.
+          </p>
           {draft.source === "upload" && draft.url && (
             <p className="mt-2 text-sm text-ink/60">✓ Clip uploaded</p>
           )}
@@ -480,7 +486,7 @@ function TileForm({
           {draft.source === "upload" ? (
             <div className="mt-3">
               <UploadField
-                accept=".html,text/html,text/plain"
+                accept=".html,.htm,text/html,text/plain"
                 gridId={gridId}
                 label={draft.src ? "Replace HTML file" : "Upload an HTML file"}
                 onUploaded={(src) => setDraft({ ...draft, src, html: undefined })}

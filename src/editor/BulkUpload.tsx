@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Images } from "lucide-react";
 import type { Tile } from "../types";
 import { store } from "../lib/store";
+import { MAX_VIDEO_SECONDS, getVideoDuration } from "../lib/video";
 
 // Extension check as well as MIME: some iOS flows mistag .html attachments
 // as plain text (see the embed tile's accept fix), and camera videos can
@@ -22,9 +23,10 @@ function tileFor(file: File, url: string): Tile | null {
  * Prominent entry point for filling many cells at once: pick any mix of
  * photos, GIFs, videos, and HTML interactives in one pass. Each file becomes
  * the matching tile type, in selection order; files that fail (over the size
- * limit, unsupported) are skipped with a named inline error while the rest
- * still land. Assignment to cells (next empty, row-major) is the caller's
- * job so the grid state stays in one place.
+ * limit, unsupported, or a video over the 10s cap — trimming belongs in the
+ * per-tile editor, not a queue of bulk trim dialogs) are skipped with a named
+ * inline error while the rest still land. Assignment to cells (next empty,
+ * row-major) is the caller's job so the grid state stays in one place.
  */
 export function BulkUploadButton({
   gridId,
@@ -47,14 +49,33 @@ export function BulkUploadButton({
     const list = Array.from(files);
     for (let i = 0; i < list.length; i++) {
       const file = list[i];
-      setProgress(`Uploading ${i + 1} of ${list.length}…`);
+      const label = (pct: number) =>
+        setProgress(`Uploading ${i + 1} of ${list.length}${pct > 0 ? ` — ${pct}%` : ""}…`);
+      label(0);
+
       // Classify before uploading so unsupported files never hit storage.
       if (!tileFor(file, "")) {
         failed.push(`${file.name}: unsupported file type — skipped.`);
         continue;
       }
+
+      if (file.type.startsWith("video/")) {
+        try {
+          const duration = await getVideoDuration(file);
+          if (duration > MAX_VIDEO_SECONDS) {
+            failed.push(
+              `${file.name}: longer than ${MAX_VIDEO_SECONDS}s — add it individually to trim it.`,
+            );
+            continue;
+          }
+        } catch {
+          failed.push(`${file.name}: couldn't read that video — skipped.`);
+          continue;
+        }
+      }
+
       try {
-        const url = await store.uploadMedia(gridId, file);
+        const url = await store.uploadMedia(gridId, file, label);
         tiles.push(tileFor(file, url)!);
       } catch (err) {
         failed.push(`${file.name}: ${err instanceof Error ? err.message : "upload failed."}`);
@@ -79,12 +100,12 @@ export function BulkUploadButton({
         {busy ? progress || "Uploading…" : "Bulk upload media"}
       </button>
       <p className="mt-1.5 text-center text-xs text-ink/45">
-        Photos, GIFs, videos, or HTML interactives — any mix, one pass.
+        Photos, GIFs, videos (≤{MAX_VIDEO_SECONDS}s), or HTML interactives — any mix, one pass.
       </p>
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,video/*,.html,text/html,text/plain"
+        accept="image/*,video/*,.html,.htm,text/html,text/plain"
         multiple
         className="hidden"
         onChange={(e) => void handleFiles(e.target.files)}
