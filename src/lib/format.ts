@@ -53,3 +53,14 @@ export function bgStyle(bg: Background): CSSProperties {
 export function appOrigin(): string {
   return window.location.origin;
 }
+
+/**
+ * HTML detection by extension as well as MIME: mobile file pickers tag
+ * exported/shared .html files inconsistently (iOS flows sometimes mistag
+ * them as text/plain; some Android/cloud-storage providers omit a MIME type
+ * entirely), which is also why HTML upload inputs don't rely on the
+ * `accept` attribute to gate selection — only this check does.
+ */
+export function isHtmlFile(f: File): boolean {
+  return f.type === "text/html" || /\.html?$/i.test(f.name);
+}

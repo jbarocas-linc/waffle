@@ -2,12 +2,8 @@ import { useRef, useState } from "react";
 import { Images } from "lucide-react";
 import type { Tile } from "../types";
 import { store } from "../lib/store";
+import { isHtmlFile } from "../lib/format";
 import { MAX_VIDEO_SECONDS, getVideoDuration } from "../lib/video";
-
-// Extension check as well as MIME: some iOS flows mistag .html attachments
-// as plain text (see the embed tile's accept fix), and camera videos can
-// arrive with vendor MIME types.
-const isHtmlFile = (f: File) => /\.html?$/i.test(f.name) || f.type === "text/html";
 
 /** Map a selected file to the tile it should become. null = unsupported. */
 function tileFor(file: File, url: string): Tile | null {
@@ -105,7 +101,12 @@ export function BulkUploadButton({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,video/*,.html,.htm,text/html,text/plain"
+        // Unrestricted on purpose: `accept` filtering is unreliable for HTML
+        // specifically across mobile OSes and cloud-storage providers (see
+        // isHtmlFile in lib/format.ts). tileFor() below already classifies
+        // and rejects anything unsupported with a clear per-file message, so
+        // accept would only add a chance of greying out a valid file.
+        accept="*/*"
         multiple
         className="hidden"
         onChange={(e) => void handleFiles(e.target.files)}

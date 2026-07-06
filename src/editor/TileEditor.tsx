@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import type { Tile, TileType } from "../types";
-import { parseVideoUrl } from "../lib/format";
+import { isHtmlFile, parseVideoUrl } from "../lib/format";
 import { TILE_COLORS } from "../lib/palette";
 import { DEFAULT_OVERLAY_STYLE, defaultBodyStyle } from "../lib/textStyle";
 import { MAX_VIDEO_SECONDS } from "../lib/video";
@@ -486,7 +486,8 @@ function TileForm({
           {draft.source === "upload" ? (
             <div className="mt-3">
               <UploadField
-                accept=".html,.htm,text/html,text/plain"
+                accept="*/*"
+                validate={(file) => (isHtmlFile(file) ? null : "Please select an .html file.")}
                 gridId={gridId}
                 label={draft.src ? "Replace HTML file" : "Upload an HTML file"}
                 onUploaded={(src) => setDraft({ ...draft, src, html: undefined })}

@@ -9,6 +9,7 @@ export function UploadField({
   gridId,
   label,
   kind,
+  validate,
   onUploaded,
 }: {
   accept: string;
@@ -16,6 +17,8 @@ export function UploadField({
   label: string;
   /** "video" gates files over MAX_VIDEO_SECONDS into the trim editor instead of uploading directly. */
   kind?: "video";
+  /** Post-selection check (accept is an unreliable gate for some file types on mobile — this is the real one). Return an error string to reject, or null to allow. */
+  validate?: (file: File) => string | null;
   onUploaded: (url: string, file: File) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +45,14 @@ export function UploadField({
   const handle = async (file: File | undefined) => {
     if (!file) return;
     setError("");
+
+    if (validate) {
+      const message = validate(file);
+      if (message) {
+        setError(message);
+        return;
+      }
+    }
 
     if (kind === "video") {
       setBusy(true);

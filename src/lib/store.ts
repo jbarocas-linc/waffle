@@ -2,6 +2,7 @@ import type { CreateGridInput, GridPatch, GridRecord, PublicGrid } from "../type
 import { newMediaKey } from "./ids";
 import { demoGrid } from "../data/demoGrid";
 import { compressImage } from "./imageCompression";
+import { isHtmlFile } from "./format";
 import { publicStorageUrl, uploadToSupabaseStorage } from "./uploadTransport";
 
 export interface GridStore {
@@ -45,10 +46,6 @@ async function jsonFetchOrNull<T>(url: string): Promise<T | null> {
   if (!res.ok) throw new Error(`Request failed (${res.status})`);
   return res.json();
 }
-
-// HTML detection also checks the extension: some iOS flows mistag .html
-// attachments as text/plain, and the 2 MB HTML cap must still apply to them.
-const isHtmlFile = (f: File) => f.type === "text/html" || /\.html?$/i.test(f.name);
 
 const UPLOAD_LIMITS: { test: (f: File) => boolean; max: number; label: string }[] = [
   { test: (f) => f.type.startsWith("video/"), max: 100 * 1024 * 1024, label: "Video up to 100 MB" },
