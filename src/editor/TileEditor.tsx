@@ -448,7 +448,14 @@ function TileForm({
       return (
         <div>
           <UploadField
-            accept=".pdf,application/pdf,.doc,.docx,.ppt,.pptx,.zip"
+            accept="*/*"
+            validate={(file) => {
+              if (isHtmlFile(file))
+                return "That's an HTML file — switch the tile type to Embed to make it interactive.";
+              return /\.(pdf|docx?|pptx?|zip)$/i.test(file.name) || file.type === "application/pdf"
+                ? null
+                : "Please select a PDF, Word, PowerPoint, or ZIP file.";
+            }}
             gridId={gridId}
             label={draft.src ? "Replace file" : "Upload a PDF or file"}
             onUploaded={(src, file) =>
