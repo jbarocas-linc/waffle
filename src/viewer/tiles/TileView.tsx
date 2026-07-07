@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Download, ExternalLink, FileText, Play, Volume2, VolumeX } from "lucide-react";
+import { Download, ExternalLink, FileText, Loader2, Play, Volume2, VolumeX } from "lucide-react";
 import type { Tile } from "../../types";
 import { bgStyle, humanBytes, parseVideoUrl, textOn } from "../../lib/format";
 import { DEFAULT_OVERLAY_STYLE, textStyleCss, textWrapperCss } from "../../lib/textStyle";
@@ -328,24 +328,53 @@ function EmbedTile({ tile, active }: { tile: Extract<Tile, { type: "embed" }>; a
     if (active) setMounted(true);
   }, [active]);
 
+  // Uploaded HTML can't be iframed by URL: Supabase Storage serves uploaded
+  // HTML as text/plain (an anti-phishing measure on its public domain), which
+  // renders as raw source. Fetch the text and render via srcDoc instead —
+  // same path the snippet mode uses, and it decodes as UTF-8 for free.
+  const needsFetch = tile.source === "upload" && !!tile.src;
+  const [fetchedHtml, setFetchedHtml] = useState<string | null>(null);
+  const [fetchFailed, setFetchFailed] = useState(false);
+  useEffect(() => {
+    if (!mounted || !needsFetch) return;
+    let cancelled = false;
+    fetch(tile.src!)
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.text();
+      })
+      .then((text) => {
+        if (!cancelled) setFetchedHtml(text);
+      })
+      .catch(() => {
+        if (!cancelled) setFetchFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted, needsFetch, tile.src]);
+
+  const doc = needsFetch ? fetchedHtml : tile.html;
+
   return (
     <div className="relative h-full w-full bg-ink">
       {mounted &&
-        (tile.source === "upload" && tile.src ? (
+        (doc != null ? (
           <iframe
-            src={tile.src}
+            srcDoc={doc}
             sandbox="allow-scripts"
             className="h-full w-full border-0"
             title={tile.label || "Interactive content"}
           />
-        ) : (
-          <iframe
-            srcDoc={tile.html}
-            sandbox="allow-scripts"
-            className="h-full w-full border-0"
-            title={tile.label || "Interactive content"}
-          />
-        ))}
+        ) : fetchFailed ? (
+          <div className="flex h-full w-full items-center justify-center px-8 text-center text-sm text-paper/70">
+            Couldn't load this interactive — check your connection.
+          </div>
+        ) : needsFetch ? (
+          <div className="flex h-full w-full items-center justify-center">
+            <Loader2 size={28} className="animate-spin text-paper/60" />
+          </div>
+        ) : null)}
       <EdgeGrabZones />
       {tile.label && (
         <div className="pointer-events-none absolute left-4 top-4 z-[6] rounded-full bg-black/45 px-3 py-1 text-xs font-medium text-white/85 backdrop-blur-sm">
